@@ -11,6 +11,8 @@
 
 #include <cmath>
 
+#include "scene.h"
+
 void run();
 
 int main(int argc, char** argv)
@@ -65,7 +67,7 @@ void run() {
     console->info("\theight: {0}", display_mode.h);
 
     int window_width= 512;
-    int window_height = 256;
+    int window_height = 512;
 
     console->info("Display:");
     console->info("\twidth:  {0}", window_width);
@@ -93,15 +95,32 @@ void run() {
         throw std::runtime_error("SDL_CreateRenderer");
     }
 
+    Dots dots(window_width, window_height, 100);
+
     bool run = true;
     auto start_time = std::chrono::system_clock::now();
     auto last_time = start_time;
     uint64_t count = 0;
     uint64_t last_count = 0;
-    double time_step = 0.1;
+    double time_step = 1.0 / display_mode.refresh_rate;
     while (run) {
         auto loop_start_time = std::chrono::system_clock::now();
         ++count;
+
+        int16_t x = count % window_width;
+        int16_t y = count % window_height;
+        SDL_Rect rect = {x - 5, y - 5, 10, 10};
+
+        SDL_SetRenderDrawColor(sdl_renderer, 0x00, 0x00, 0x00, SDL_ALPHA_OPAQUE);
+        SDL_RenderClear(sdl_renderer);
+
+        dots.render(sdl_renderer);
+
+        SDL_SetRenderDrawColor(sdl_renderer, 0xff, 0xff, 0xff, SDL_ALPHA_OPAQUE);
+        SDL_RenderDrawLine(sdl_renderer, x, 0, x, window_height);
+        SDL_RenderDrawLine(sdl_renderer, 0, y, window_width, y);
+        SDL_RenderFillRect(sdl_renderer, &rect);
+        SDL_RenderPresent(sdl_renderer);
 
         SDL_Event sdl_event;
         while (SDL_PollEvent(&sdl_event)) {
@@ -129,6 +148,10 @@ void run() {
             last_time = current_time;
             last_count = count;
         }
+
+        // if(loop_elapsed.count() < 0.01) {
+        //     SDL_Delay(100 - loop_elapsed.count() * 100);
+        // }
     }
 
     SDL_DestroyRenderer(sdl_renderer);
